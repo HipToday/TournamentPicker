@@ -76,8 +76,7 @@ var regional2Winner = TournamentPicker.BracketWinner(regional2Teams)[0];
 var regional3Winner = TournamentPicker.BracketWinner(regional3Teams)[0];
 var regional4Winner = TournamentPicker.BracketWinner(regional4Teams)[0];
 
-
-
+Console.WriteLine();
 Console.WriteLine($"Regional One Winner: {regional1Winner}");
 Console.WriteLine($"Regional Two Winner: {regional2Winner}");
 Console.WriteLine($"Regional Three Winner: {regional3Winner}");
