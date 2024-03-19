@@ -1,4 +1,4 @@
-﻿
+
 var regional1Teams = new Team[] {
     new Team("South Carolina", 1),
     new Team("Notre Dame", 2),
@@ -148,7 +148,7 @@ class TournamentPicker {
 
         // If we're down to 1 we've found our winner
         if (winner.Length == 1) {
-            return teams;
+            return winner;
         }
 
         return BracketWinner(winner, finalFour);
