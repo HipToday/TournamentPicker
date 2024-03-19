@@ -1,5 +1,4 @@
-
-var regional1Teams = new Team[] {
+﻿var regional1Teams = new Team[] {
     new Team("South Carolina", 1),
     new Team("Notre Dame", 2),
     new Team("Oregon St", 3),
@@ -17,9 +16,6 @@ var regional1Teams = new Team[] {
     new Team("Kent State", 15),
     new Team("SHU/PRES", 16),
 };
-var regional1Winner = TournamentPicker.BracketWinner(regional1Teams)[0];
-Console.WriteLine($"Regional One Winner: {regional1Winner}");
-
 var regional2Teams = new Team[] {
     new Team("Iowa", 1),
     new Team("UCLA", 2),
@@ -38,9 +34,6 @@ var regional2Teams = new Team[] {
     new Team("CA Baptist", 15),
     new Team("HC/UTM", 16),
 };
-var regional2Winner = TournamentPicker.BracketWinner(regional2Teams)[0];
-Console.WriteLine($"Regional Two Winner: {regional2Winner}");
-
 var regional3Teams = new Team[] {
     new Team("USC", 1),
     new Team("Ohio State", 2),
@@ -59,9 +52,6 @@ var regional3Teams = new Team[] {
     new Team("Maine", 15),
     new Team("Texas A&M-CC", 16),
 };
-var regional3Winner = TournamentPicker.BracketWinner(regional3Teams)[0];
-Console.WriteLine($"Regional Three Winner: {regional3Winner}");
-
 var regional4Teams = new Team[] {
     new Team("Texas", 1),
     new Team("Stanford", 2),
@@ -80,7 +70,17 @@ var regional4Teams = new Team[] {
     new Team("Norfolk St", 15),
     new Team("Drexel", 16),
 };
+
+var regional1Winner = TournamentPicker.BracketWinner(regional1Teams)[0];
+var regional2Winner = TournamentPicker.BracketWinner(regional2Teams)[0];
+var regional3Winner = TournamentPicker.BracketWinner(regional3Teams)[0];
 var regional4Winner = TournamentPicker.BracketWinner(regional4Teams)[0];
+
+
+
+Console.WriteLine($"Regional One Winner: {regional1Winner}");
+Console.WriteLine($"Regional Two Winner: {regional2Winner}");
+Console.WriteLine($"Regional Three Winner: {regional3Winner}");
 Console.WriteLine($"Regional Four Winner: {regional4Winner}");
 
 var finalFour = new Team[] {
@@ -89,6 +89,7 @@ var finalFour = new Team[] {
     regional3Winner,
     regional4Winner,
 };
+
 var champion = TournamentPicker.BracketWinner(finalFour, true)[0];
 Console.WriteLine($"Champion: {champion}");
 
