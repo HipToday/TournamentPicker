@@ -1,0 +1,15 @@
+C:\Users\ntempleton\source\TournamentPicker\bin\Debug\net8.0\TournamentPicker.exe
+C:\Users\ntempleton\source\TournamentPicker\bin\Debug\net8.0\TournamentPicker.deps.json
+C:\Users\ntempleton\source\TournamentPicker\bin\Debug\net8.0\TournamentPicker.runtimeconfig.json
+C:\Users\ntempleton\source\TournamentPicker\bin\Debug\net8.0\TournamentPicker.dll
+C:\Users\ntempleton\source\TournamentPicker\bin\Debug\net8.0\TournamentPicker.pdb
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\TournamentPicker.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\TournamentPicker.AssemblyInfoInputs.cache
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\TournamentPicker.AssemblyInfo.cs
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\TournamentPicker.csproj.CoreCompileInputs.cache
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\TournamentPicker.sourcelink.json
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\TournamentPicker.dll
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\refint\TournamentPicker.dll
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\TournamentPicker.pdb
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\TournamentPicker.genruntimeconfig.cache
+C:\Users\ntempleton\source\TournamentPicker\obj\Debug\net8.0\ref\TournamentPicker.dll
