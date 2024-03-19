@@ -1,64 +1,4 @@
-﻿Random random = new();
-
-Team WhoWins(Team home, Team away) {
-    var seeds = new int[home.Seed + away.Seed];
-
-    Array.Fill(seeds, away.Seed, 0, home.Seed);
-    Array.Fill(seeds, home.Seed, home.Seed, away.Seed);
-
-//    Console.WriteLine($"seeds[{seeds.Length}]: " + string.Join(",", seeds));
-    var winningSeed = seeds[random.Next(seeds.Length)];
-    return (winningSeed == home.Seed) ? home : away;
-}
-
-Team[] RoundWinners(Team[] teams) {
-    var winners = new Team[teams.Length / 2];
-
-    for (int i = 0; i < teams.Length / 2; i++) {
-        winners[i] = WhoWins(teams[i], teams[^(i + 1)]);
-        Console.WriteLine($"{teams[i]}");
-        Console.WriteLine($"  vs.\tWinner: {winners[i]}");
-        Console.WriteLine($"{teams[^(i + 1)]}");
-    }
-
-    return winners;
-}
-
-Team[] BracketWinner(Team[] teams, bool finalFour = false) {
-    switch (teams.Length) {
-        case 4:
-            if (finalFour) {
-                Console.WriteLine($"\nFinal Four:");
-            } else {
-                Console.WriteLine($"\nSweet Sixteen:");
-            }
-            break;
-
-        case 2:
-            if (finalFour) {
-                Console.WriteLine($"\nChampionship:");
-            } else {
-                Console.WriteLine($"\nElite Eight:");
-            }
-            break;
-
-        default:
-            Console.WriteLine($"\nRound of {teams.Length * 4}");
-            break;
-    }
-
-    Console.WriteLine("-----------");
-    
-    var winner = RoundWinners(teams);
-
-    // If we're down to 1 we've found our winner
-    if (winner.Length == 1) {
-        return teams;
-    }
-
-    return BracketWinner(winner, finalFour);
-}
-
+﻿
 var regional1Teams = new Team[] {
     new Team("South Carolina", 1),
     new Team("Notre Dame", 2),
@@ -77,7 +17,7 @@ var regional1Teams = new Team[] {
     new Team("Kent State", 15),
     new Team("SHU/PRES", 16),
 };
-var regional1Winner = BracketWinner(regional1Teams)[0];
+var regional1Winner = TournamentPicker.BracketWinner(regional1Teams)[0];
 Console.WriteLine($"Regional One Winner: {regional1Winner}");
 
 var regional2Teams = new Team[] {
@@ -98,7 +38,7 @@ var regional2Teams = new Team[] {
     new Team("CA Baptist", 15),
     new Team("HC/UTM", 16),
 };
-var regional2Winner = BracketWinner(regional2Teams)[0];
+var regional2Winner = TournamentPicker.BracketWinner(regional2Teams)[0];
 Console.WriteLine($"Regional Two Winner: {regional2Winner}");
 
 var regional3Teams = new Team[] {
@@ -119,7 +59,7 @@ var regional3Teams = new Team[] {
     new Team("Maine", 15),
     new Team("Texas A&M-CC", 16),
 };
-var regional3Winner = BracketWinner(regional3Teams)[0];
+var regional3Winner = TournamentPicker.BracketWinner(regional3Teams)[0];
 Console.WriteLine($"Regional Three Winner: {regional3Winner}");
 
 var regional4Teams = new Team[] {
@@ -140,7 +80,7 @@ var regional4Teams = new Team[] {
     new Team("Norfolk St", 15),
     new Team("Drexel", 16),
 };
-var regional4Winner = BracketWinner(regional4Teams)[0];
+var regional4Winner = TournamentPicker.BracketWinner(regional4Teams)[0];
 Console.WriteLine($"Regional Four Winner: {regional4Winner}");
 
 var finalFour = new Team[] {
@@ -149,8 +89,72 @@ var finalFour = new Team[] {
     regional3Winner,
     regional4Winner,
 };
-var champion = BracketWinner(finalFour, true)[0];
+var champion = TournamentPicker.BracketWinner(finalFour, true)[0];
 Console.WriteLine($"Champion: {champion}");
+
+class TournamentPicker {
+    private static readonly Random random = new();
+
+    public static Team WhoWins(Team home, Team away) {
+        var seeds = new int[home.Seed + away.Seed];
+
+        Array.Fill(seeds, away.Seed, 0, home.Seed);
+        Array.Fill(seeds, home.Seed, home.Seed, away.Seed);
+
+        // Console.WriteLine($"seeds[{seeds.Length}]: " + string.Join(",", seeds));
+        var winningSeed = seeds[random.Next(seeds.Length)];
+        return (winningSeed == home.Seed) ? home : away;
+    }
+
+    public static Team[] RoundWinners(Team[] teams) {
+        var winners = new Team[teams.Length / 2];
+
+        for (int i = 0; i < teams.Length / 2; i++) {
+            winners[i] = WhoWins(teams[i], teams[^(i + 1)]);
+            Console.WriteLine($"{teams[i]}");
+            Console.WriteLine($"  vs.\tWinner: {winners[i]}");
+            Console.WriteLine($"{teams[^(i + 1)]}");
+        }
+
+        return winners;
+    }
+
+    public static Team[] BracketWinner(Team[] teams, bool finalFour = false) {
+        switch (teams.Length) {
+            case 4:
+                if (finalFour) {
+                    Console.WriteLine($"\nFinal Four:");
+                } else {
+                    Console.WriteLine($"\nSweet Sixteen:");
+                }
+                break;
+
+            case 2:
+                if (finalFour) {
+                    Console.WriteLine($"\nChampionship:");
+                } else {
+                    Console.WriteLine($"\nElite Eight:");
+                }
+                break;
+
+            default:
+                Console.WriteLine($"\nRound of {teams.Length * 4}");
+                break;
+        }
+
+        Console.WriteLine("-----------");
+        
+        var winner = RoundWinners(teams);
+
+        // If we're down to 1 we've found our winner
+        if (winner.Length == 1) {
+            return teams;
+        }
+
+        return BracketWinner(winner, finalFour);
+    }
+
+}
 
 public class Team(string name, int seed)
 {
