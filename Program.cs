@@ -82,7 +82,7 @@ static async Task<Team[]> GetRegionalTeamsAsync(GoogleSheetsService googleSheets
         throw new ArgumentException("Region cannot be null or empty.", nameof(region));
     }
 
-    var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, $"{region} Regional", "A2:B17"))
+    var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, $"{region} Regional", "A2:E17"))
         .Select((row, i) => {
             var seedValue = row[0]?.ToString()?
                 .Replace("*", string.Empty);
@@ -90,8 +90,12 @@ static async Task<Team[]> GetRegionalTeamsAsync(GoogleSheetsService googleSheets
                 seed = i + 1;
             }
             var name = row[1]?.ToString() ?? $"{region} {seed}";
+            var overallSeedValue = row[4]?.ToString();
+            if (!int.TryParse(overallSeedValue, out int overallSeed)) {
+                throw new InvalidOperationException($"Failed to load overall seed for {name}.");
+            }
 
-            return new Team(name, seed);
+            return new Team(name, seed, overallSeed);
         })
         .ToArray();
 
@@ -107,14 +111,21 @@ class TournamentPicker {
     private static readonly Random random = new();
 
     public static Team WhoWins(Team home, Team away) {
-        var seeds = new int[home.Seed + away.Seed];
+        var seeds = new Team[home.Seed + away.Seed];
 
-        Array.Fill(seeds, away.Seed, 0, home.Seed);
-        Array.Fill(seeds, home.Seed, home.Seed, away.Seed);
+        Array.Fill(seeds, away, 0, home.Seed);
+        Array.Fill(seeds, home, home.Seed, away.Seed);
 
-        // Console.WriteLine($"seeds[{seeds.Length}]: " + string.Join(",", seeds));
-        var winningSeed = seeds[random.Next(seeds.Length)];
-        return (winningSeed == home.Seed) ? home : away;
+        return seeds[random.Next(seeds.Length)];
+    }
+
+    public static Team WhoWinsByOverallSeed(Team home, Team away) {
+        var seeds = new Team[home.OverallSeed + away.OverallSeed];
+
+        Array.Fill(seeds, away, 0, home.OverallSeed);
+        Array.Fill(seeds, home, home.OverallSeed, away.OverallSeed);
+
+        return seeds[random.Next(seeds.Length)];
     }
 
     public static Team[] RoundWinners(Team[] teams) {
@@ -124,7 +135,7 @@ class TournamentPicker {
             // upsets are defined as a difference of 5 or more in seed
             var potentialUpset = Math.Abs(teams[i].Seed - teams[^(i + 1)].Seed) >= 5;
             var underdog = potentialUpset ? new[] { teams[i], teams[^(i + 1)] }.OrderBy(t => t.Seed).Last() : null;
-            winners[i] = WhoWins(teams[i], teams[^(i + 1)]);
+            winners[i] = WhoWinsByOverallSeed(teams[i], teams[^(i + 1)]);
             Console.WriteLine($"{teams[i]}");
             Console.WriteLine($"  vs.\tWinner: {winners[i]}{(underdog == winners[i] ? " (upset)" : "")}");
             Console.WriteLine($"{teams[^(i + 1)]}");
@@ -170,10 +181,11 @@ class TournamentPicker {
 
 }
 
-public class Team(string name, int seed)
+public class Team(string name, int seed, int overallSeed)
 {
     public string Name { get; } = name;
     public int Seed { get; } = seed;
+    public int OverallSeed { get; } = overallSeed;
 
     override public string ToString() {
         return $"{Seed} {Name}";
