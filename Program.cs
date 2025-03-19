@@ -121,9 +121,12 @@ class TournamentPicker {
         var winners = new Team[teams.Length / 2];
 
         for (int i = 0; i < teams.Length / 2; i++) {
+            // upsets are defined as a difference of 5 or more in seed
+            var potentialUpset = Math.Abs(teams[i].Seed - teams[^(i + 1)].Seed) >= 5;
+            var underdog = potentialUpset ? new[] { teams[i], teams[^(i + 1)] }.OrderBy(t => t.Seed).Last() : null;
             winners[i] = WhoWins(teams[i], teams[^(i + 1)]);
             Console.WriteLine($"{teams[i]}");
-            Console.WriteLine($"  vs.\tWinner: {winners[i]}");
+            Console.WriteLine($"  vs.\tWinner: {winners[i]}{(underdog == winners[i] ? " (upset)" : "")}");
             Console.WriteLine($"{teams[^(i + 1)]}");
         }
 
