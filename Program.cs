@@ -27,34 +27,10 @@ foreach (var row in values)
     Console.WriteLine(string.Join(", ", row));
 }
 
-var regional1Teams = (await googleSheetsService.GetValuesAsync(spreadsheetId, "South Regional", "A2:B17"))
-    .Select((row, i) => {
-        var seed = int.Parse(row[0]?.ToString()?.Replace("*", string.Empty) ?? i.ToString());
-        var name = row[1]?.ToString() ?? $"East {i}";
-        return new Team(name, seed);
-    })
-    .ToArray();
-var regional2Teams = (await googleSheetsService.GetValuesAsync(spreadsheetId, "East Regional", "A2:B17"))
-    .Select((row, i) => {
-        var seed = int.Parse(row[0]?.ToString()?.Replace("*", string.Empty) ?? i.ToString());
-        var name = row[1]?.ToString() ?? $"South {i}";
-        return new Team(name, seed);
-    })
-    .ToArray();
-var regional3Teams = (await googleSheetsService.GetValuesAsync(spreadsheetId, "Midwest Regional", "A2:B17"))
-    .Select((row, i) => {
-        var seed = int.Parse(row[0]?.ToString()?.Replace("*", string.Empty) ?? i.ToString());
-        var name = row[1]?.ToString() ?? $"Midwest {i}";
-        return new Team(name, seed);
-    })
-    .ToArray();
-var regional4Teams = (await googleSheetsService.GetValuesAsync(spreadsheetId, "West Regional", "A2:B17"))
-    .Select((row, i) => {
-        var seed = int.Parse(row[0]?.ToString()?.Replace("*", string.Empty) ?? i.ToString());
-        var name = row[1]?.ToString() ?? $"West {i}";
-        return new Team(name, seed);
-    })
-    .ToArray();
+var regional1Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, "South");
+var regional2Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, "East");
+var regional3Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, "Midwest");
+var regional4Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, "West");
 
 // Check if any of the regions failed to load
 if (regional1Teams.Length == 0 || regional2Teams.Length == 0 || regional3Teams.Length == 0 || regional4Teams.Length == 0)
@@ -83,6 +59,49 @@ var finalFour = new Team[] {
 
 var champion = TournamentPicker.BracketWinner(finalFour, true)[0];
 Console.WriteLine($"Champion: {champion}");
+
+/// <summary>
+/// Get the regional teams for the given region.
+/// </summary>
+/// <param name="googleSheetsService">The Google Sheets service.</param>
+/// <param name="spreadsheetId">The ID of the spreadsheet.</param>
+/// <param name="region">The region to get the teams for.</param>
+/// <returns>The regional teams.</returns>
+/// <exception cref="InvalidOperationException">Thrown when the regional teams cannot be loaded.</exception>
+/// <exception cref="ArgumentException">Thrown when the region is invalid.</exception>
+/// <exception cref="ArgumentNullException">Thrown when the Google Sheets service is null.</exception>
+static async Task<Team[]> GetRegionalTeamsAsync(GoogleSheetsService googleSheetsService, string spreadsheetId, string region)
+{
+    if (googleSheetsService == null)
+    {
+        throw new ArgumentNullException(nameof(googleSheetsService));
+    }
+
+    if (string.IsNullOrEmpty(region))
+    {
+        throw new ArgumentException("Region cannot be null or empty.", nameof(region));
+    }
+
+    var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, $"{region} Regional", "A2:B17"))
+        .Select((row, i) => {
+            var seedValue = row[0]?.ToString()?
+                .Replace("*", string.Empty);
+            if (!int.TryParse(seedValue, out int seed)) {
+                seed = i + 1;
+            }
+            var name = row[1]?.ToString() ?? $"{region} {seed}";
+
+            return new Team(name, seed);
+        })
+        .ToArray();
+
+    if (regionTeams.Length == 0)
+    {
+        throw new InvalidOperationException($"Failed to load bracket data for the {region} region.");
+    }
+
+    return regionTeams;
+}
 
 class TournamentPicker {
     private static readonly Random random = new();
