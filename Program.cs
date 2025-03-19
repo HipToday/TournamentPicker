@@ -1,75 +1,67 @@
-﻿var regional1Teams = new Team[] {
-    new Team("EAST", 1),
-    new Team("EAST", 2),
-    new Team("EAST", 3),
-    new Team("EAST", 4),
-    new Team("EAST", 5),
-    new Team("EAST", 6),
-    new Team("EAST", 7),
-    new Team("EAST", 8),
-    new Team("EAST", 9),
-    new Team("EAST", 10),
-    new Team("EAST", 11),
-    new Team("EAST", 12),
-    new Team("EAST", 13),
-    new Team("EAST", 14),
-    new Team("EAST", 15),
-    new Team("EAST", 16),
-};
-var regional2Teams = new Team[] {
-    new Team("SOUTH", 1),
-    new Team("SOUTH", 2),
-    new Team("SOUTH", 3),
-    new Team("SOUTH", 4),
-    new Team("SOUTH", 5),
-    new Team("SOUTH", 6),
-    new Team("SOUTH", 7),
-    new Team("SOUTH", 8),
-    new Team("SOUTH", 9),
-    new Team("SOUTH", 10),
-    new Team("SOUTH", 11),
-    new Team("SOUTH", 12),
-    new Team("SOUTH", 13),
-    new Team("SOUTH", 14),
-    new Team("SOUTH", 15),
-    new Team("SOUTH", 16),
-};
-var regional3Teams = new Team[] {
-    new Team("MIDWEST", 1),
-    new Team("MIDWEST", 2),
-    new Team("MIDWEST", 3),
-    new Team("MIDWEST", 4),
-    new Team("MIDWEST", 5),
-    new Team("MIDWEST", 6),
-    new Team("MIDWEST", 7),
-    new Team("MIDWEST", 8),
-    new Team("MIDWEST", 9),
-    new Team("MIDWEST", 10),
-    new Team("MIDWEST", 11),
-    new Team("MIDWEST", 12),
-    new Team("MIDWEST", 13),
-    new Team("MIDWEST", 14),
-    new Team("MIDWEST", 15),
-    new Team("MIDWEST", 16),
-};
-var regional4Teams = new Team[] {
-    new Team("WEST", 1),
-    new Team("WEST", 2),
-    new Team("WEST", 3),
-    new Team("WEST", 4),
-    new Team("WEST", 5),
-    new Team("WEST", 6),
-    new Team("WEST", 7),
-    new Team("WEST", 8),
-    new Team("WEST", 9),
-    new Team("WEST", 10),
-    new Team("WEST", 11),
-    new Team("WEST", 12),
-    new Team("WEST", 13),
-    new Team("WEST", 14),
-    new Team("WEST", 15),
-    new Team("WEST", 16),
-};
+﻿using GoogleSheets;
+
+// Get the TournamentPickerApiKey and the TournamentPickerSpreadsheetIdfrom the environment variables
+var apiKey = Environment.GetEnvironmentVariable("TournamentPickerApiKey", EnvironmentVariableTarget.User);
+var spreadsheetId = Environment.GetEnvironmentVariable("TournamentPickerSpreadsheetId", EnvironmentVariableTarget.User);
+
+// Check if the API key or spreadsheet ID is missing
+if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(spreadsheetId))
+{
+    Console.WriteLine("API key or spreadsheet ID is missing.");
+    return;
+}
+
+var googleSheetsService = new GoogleSheetsService(apiKey);
+
+var sheetTitles = await googleSheetsService.GetSheetTitlesAsync(spreadsheetId);
+Console.WriteLine("Sheet Titles:");
+foreach (var title in sheetTitles)
+{
+    Console.WriteLine(title);
+}
+
+var values = await googleSheetsService.GetValuesAsync(spreadsheetId, sheetTitles[0], "A2:B17");
+Console.WriteLine("Values:");
+foreach (var row in values)
+{
+    Console.WriteLine(string.Join(", ", row));
+}
+
+var regional1Teams = (await googleSheetsService.GetValuesAsync(spreadsheetId, "South Regional", "A2:B17"))
+    .Select((row, i) => {
+        var seed = int.Parse(row[0]?.ToString()?.Replace("*", string.Empty) ?? i.ToString());
+        var name = row[1]?.ToString() ?? $"East {i}";
+        return new Team(name, seed);
+    })
+    .ToArray();
+var regional2Teams = (await googleSheetsService.GetValuesAsync(spreadsheetId, "East Regional", "A2:B17"))
+    .Select((row, i) => {
+        var seed = int.Parse(row[0]?.ToString()?.Replace("*", string.Empty) ?? i.ToString());
+        var name = row[1]?.ToString() ?? $"South {i}";
+        return new Team(name, seed);
+    })
+    .ToArray();
+var regional3Teams = (await googleSheetsService.GetValuesAsync(spreadsheetId, "Midwest Regional", "A2:B17"))
+    .Select((row, i) => {
+        var seed = int.Parse(row[0]?.ToString()?.Replace("*", string.Empty) ?? i.ToString());
+        var name = row[1]?.ToString() ?? $"Midwest {i}";
+        return new Team(name, seed);
+    })
+    .ToArray();
+var regional4Teams = (await googleSheetsService.GetValuesAsync(spreadsheetId, "West Regional", "A2:B17"))
+    .Select((row, i) => {
+        var seed = int.Parse(row[0]?.ToString()?.Replace("*", string.Empty) ?? i.ToString());
+        var name = row[1]?.ToString() ?? $"West {i}";
+        return new Team(name, seed);
+    })
+    .ToArray();
+
+// Check if any of the regions failed to load
+if (regional1Teams.Length == 0 || regional2Teams.Length == 0 || regional3Teams.Length == 0 || regional4Teams.Length == 0)
+{
+    Console.WriteLine("Failed to load bracket data for one or more regions.");
+    return;
+}
 
 var regional1Winner = TournamentPicker.BracketWinner(regional1Teams)[0];
 var regional2Winner = TournamentPicker.BracketWinner(regional2Teams)[0];
