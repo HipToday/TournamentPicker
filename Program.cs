@@ -57,10 +57,7 @@ Console.WriteLine($"\nChampion: {champion}");
 /// <exception cref="ArgumentNullException">Thrown when the Google Sheets service is null.</exception>
 static async Task<Team[]> GetRegionalTeamsAsync(GoogleSheetsService googleSheetsService, string spreadsheetId, string region)
 {
-    if (googleSheetsService == null)
-    {
-        throw new ArgumentNullException(nameof(googleSheetsService));
-    }
+    ArgumentNullException.ThrowIfNull(googleSheetsService);
 
     if (string.IsNullOrEmpty(region))
     {
