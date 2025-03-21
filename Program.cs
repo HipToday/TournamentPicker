@@ -1,6 +1,6 @@
 ﻿using GoogleSheets;
 
-// Get the TournamentPickerApiKey and the TournamentPickerSpreadsheetIdfrom the environment variables
+// Get the TournamentPickerApiKey and the TournamentPickerSpreadsheetId from the environment variables
 var apiKey = Environment.GetEnvironmentVariable("TournamentPickerApiKey", EnvironmentVariableTarget.User);
 var spreadsheetId = Environment.GetEnvironmentVariable("TournamentPickerSpreadsheetId", EnvironmentVariableTarget.User);
 
@@ -13,6 +13,9 @@ if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(spreadsheetId))
 
 var googleSheetsService = new GoogleSheetsService(apiKey);
 
+// The order of the regions in the spreadsheet needs to be correct for the
+// Final Four matchups to work. The order should be:
+// Regional 1, Regional 2, Regional 3, Regional 4
 var sheetTitles = await googleSheetsService.GetSheetTitlesAsync(spreadsheetId);
 Console.WriteLine("Sheet Titles:");
 foreach (var title in sheetTitles)
@@ -20,17 +23,10 @@ foreach (var title in sheetTitles)
     Console.WriteLine(title);
 }
 
-var values = await googleSheetsService.GetValuesAsync(spreadsheetId, sheetTitles[0], "A2:B17");
-Console.WriteLine("Values:");
-foreach (var row in values)
-{
-    Console.WriteLine(string.Join(", ", row));
-}
-
-var regional1Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, "South");
-var regional2Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, "East");
-var regional3Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, "Midwest");
-var regional4Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, "West");
+var regional1Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, sheetTitles[0]);
+var regional2Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, sheetTitles[1]);
+var regional3Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, sheetTitles[2]);
+var regional4Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, sheetTitles[3]);
 
 // Check if any of the regions failed to load
 if (regional1Teams.Length == 0 || regional2Teams.Length == 0 || regional3Teams.Length == 0 || regional4Teams.Length == 0)
@@ -82,15 +78,20 @@ static async Task<Team[]> GetRegionalTeamsAsync(GoogleSheetsService googleSheets
         throw new ArgumentException("Region cannot be null or empty.", nameof(region));
     }
 
-    var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, $"{region} Regional", "A2:E17"))
+    const string range = "A2:E17";
+    const int seedColumn = 0; // Column A
+    const int nameColumn = 1; // Column B
+    const int overallSeedColumn = 4; // Column E
+
+    var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, region, range))
         .Select((row, i) => {
-            var seedValue = row[0]?.ToString()?
+            var seedValue = row[seedColumn]?.ToString()?
                 .Replace("*", string.Empty);
             if (!int.TryParse(seedValue, out int seed)) {
                 seed = i + 1;
             }
-            var name = row[1]?.ToString() ?? $"{region} {seed}";
-            var overallSeedValue = row[4]?.ToString();
+            var name = row[nameColumn]?.ToString() ?? $"{region} {seed}";
+            var overallSeedValue = row[overallSeedColumn]?.ToString();
             if (!int.TryParse(overallSeedValue, out int overallSeed)) {
                 throw new InvalidOperationException($"Failed to load overall seed for {name}.");
             }
