@@ -17,44 +17,33 @@ var googleSheetsService = new GoogleSheetsService(apiKey);
 // Final Four matchups to work. The order should be:
 // Regional 1, Regional 2, Regional 3, Regional 4
 var sheetTitles = await googleSheetsService.GetSheetTitlesAsync(spreadsheetId);
-Console.WriteLine("Sheet Titles:");
-foreach (var title in sheetTitles)
+var numberOfRegions = sheetTitles.Count; // should always be 4
+var regionalTeams = new Team[numberOfRegions][];
+var finalFour = new Team[numberOfRegions];
+
+for (int i = 0; i < numberOfRegions; i++)
 {
-    Console.WriteLine(title);
+    var title = sheetTitles[i];
+    Console.WriteLine($"\nPredicting winners for the {title}...");
+    regionalTeams[i] = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, title);
+    if (regionalTeams[i].Length == 0)
+    {
+        Console.WriteLine($"Failed to load bracket data for the {title}.");
+        return;
+    }
+
+    finalFour[i] = TournamentPicker.BracketWinner(regionalTeams[i])[0];
+    Console.WriteLine($"\nRegional {i + 1} Winner: {finalFour[i]}");
 }
 
-var regional1Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, sheetTitles[0]);
-var regional2Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, sheetTitles[1]);
-var regional3Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, sheetTitles[2]);
-var regional4Teams = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, sheetTitles[3]);
-
-// Check if any of the regions failed to load
-if (regional1Teams.Length == 0 || regional2Teams.Length == 0 || regional3Teams.Length == 0 || regional4Teams.Length == 0)
+Console.WriteLine("\nFinal Four:");
+foreach (var team in finalFour)
 {
-    Console.WriteLine("Failed to load bracket data for one or more regions.");
-    return;
+    Console.WriteLine(team);
 }
-
-var regional1Winner = TournamentPicker.BracketWinner(regional1Teams)[0];
-var regional2Winner = TournamentPicker.BracketWinner(regional2Teams)[0];
-var regional3Winner = TournamentPicker.BracketWinner(regional3Teams)[0];
-var regional4Winner = TournamentPicker.BracketWinner(regional4Teams)[0];
-
-Console.WriteLine();
-Console.WriteLine($"Regional One Winner: {regional1Winner}");
-Console.WriteLine($"Regional Two Winner: {regional2Winner}");
-Console.WriteLine($"Regional Three Winner: {regional3Winner}");
-Console.WriteLine($"Regional Four Winner: {regional4Winner}");
-
-var finalFour = new Team[] {
-    regional1Winner,
-    regional2Winner,
-    regional3Winner,
-    regional4Winner,
-};
 
 var champion = TournamentPicker.BracketWinner(finalFour, true)[0];
-Console.WriteLine($"Champion: {champion}");
+Console.WriteLine($"\nChampion: {champion}");
 
 /// <summary>
 /// Get the regional teams for the given region.
