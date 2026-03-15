@@ -19,7 +19,7 @@ class Program
             }
         };
 
-        rootCommand.SetAction(parseResult =>
+        rootCommand.SetAction((ParseResult parseResult, CancellationToken cancellationToken) =>
         {
             // Get the TournamentPickerApiKey and the TournamentPickerSpreadsheetId
             // either from the command line or from the environment variables
@@ -37,20 +37,30 @@ class Program
                 return Task.FromResult(1);
             }
 
-            return TournamentPickerAsync(apiKey, spreadsheetId);
+            return TournamentPickerAsync(apiKey, spreadsheetId, cancellationToken);
         });
 
         return rootCommand.Parse(args).InvokeAsync();
     }
 
-    static async Task<int> TournamentPickerAsync(string apiKey, string spreadsheetId)
+    /// <summary>
+    /// Picks the winners of the tournament based on the data in the given Google Sheets spreadsheet.
+    /// </summary>
+    /// <param name="apiKey">The API key for the Google Sheets API.</param>
+    /// <param name="spreadsheetId">The ID of the Google Sheets spreadsheet containing the tournament data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The exit code.</returns>
+    static async Task<int> TournamentPickerAsync(
+        string apiKey,
+        string spreadsheetId,
+        CancellationToken cancellationToken)
     {
         var googleSheetsService = new GoogleSheetsService(apiKey);
 
         // The order of the regions in the spreadsheet needs to be correct for the
         // Final Four matchups to work. The order should be:
         // Regional 1, Regional 2, Regional 3, Regional 4
-        var sheetTitles = await googleSheetsService.GetSheetTitlesAsync(spreadsheetId);
+        var sheetTitles = await googleSheetsService.GetSheetTitlesAsync(spreadsheetId, cancellationToken);
         var numberOfRegions = sheetTitles.Count; // should always be 4
         var regionalTeams = new Team[numberOfRegions][];
         var finalFour = new Team[numberOfRegions];
@@ -59,7 +69,7 @@ class Program
         {
             var title = sheetTitles[i];
             Console.WriteLine($"\nPredicting winners for the {title}...");
-            regionalTeams[i] = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, title);
+            regionalTeams[i] = await GetRegionalTeamsAsync(googleSheetsService, spreadsheetId, title, cancellationToken);
             if (regionalTeams[i].Length == 0)
             {
                 Console.WriteLine($"Failed to load bracket data for the {title}.");
@@ -88,11 +98,16 @@ class Program
     /// <param name="googleSheetsService">The Google Sheets service.</param>
     /// <param name="spreadsheetId">The ID of the spreadsheet.</param>
     /// <param name="region">The region to get the teams for.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The regional teams.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the regional teams cannot be loaded.</exception>
     /// <exception cref="ArgumentException">Thrown when the region is invalid.</exception>
     /// <exception cref="ArgumentNullException">Thrown when the Google Sheets service is null.</exception>
-    static async Task<Team[]> GetRegionalTeamsAsync(GoogleSheetsService googleSheetsService, string spreadsheetId, string region)
+    static async Task<Team[]> GetRegionalTeamsAsync(
+        GoogleSheetsService googleSheetsService,
+        string spreadsheetId,
+        string region,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(googleSheetsService);
 
@@ -106,7 +121,7 @@ class Program
         const int nameColumn = 1; // Column B
         const int overallSeedColumn = 4; // Column E
 
-        var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, region, range))
+        var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, region, range, cancellationToken))
             .Select((row, i) => {
                 var seedValue = row[seedColumn]?.ToString()?
                     .Replace("*", string.Empty);

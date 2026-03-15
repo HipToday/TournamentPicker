@@ -29,18 +29,21 @@ namespace GoogleSheets
         /// Get the spreadsheet data from the given spreadsheet ID.
         /// </summary>
         /// <param name="spreadsheetId">The ID of the spreadsheet.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The spreadsheet data.</returns>
-        public async Task<Spreadsheet> GetSpreadsheetAsync(string spreadsheetId)
+        public async Task<Spreadsheet> GetSpreadsheetAsync(
+            string spreadsheetId,
+            CancellationToken cancellationToken)
         {
             var url = $"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}";
-            var response = await _httpClient.GetAsync(url);
+            var response = await _httpClient.GetAsync(url, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new HttpRequestException($"Failed to fetch spreadsheet: {response.ReasonPhrase}");
             }
 
-            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
             var spreadsheet = JsonSerializer.Deserialize<Spreadsheet>(jsonResponse, _jsonSerializerOptions);
 
             if (spreadsheet == null)
@@ -55,10 +58,13 @@ namespace GoogleSheets
         /// Get the list of sheet titles from the given spreadsheet.
         /// </summary>
         /// <param name="spreadsheetId">The ID of the spreadsheet.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The list of sheet titles.</returns>
-        public async Task<IList<string>> GetSheetTitlesAsync(string spreadsheetId)
+        public async Task<IList<string>> GetSheetTitlesAsync(
+            string spreadsheetId,
+            CancellationToken cancellationToken)
         {
-            var spreadsheet = await GetSpreadsheetAsync(spreadsheetId);
+            var spreadsheet = await GetSpreadsheetAsync(spreadsheetId, cancellationToken);
 
             return spreadsheet.Sheets?.Select(sheet => sheet.Properties?.Title ?? string.Empty).ToList() ?? [];
         }
@@ -69,19 +75,24 @@ namespace GoogleSheets
         /// <param name="spreadsheetId">The ID of the spreadsheet.</param>
         /// <param name="sheetTitle">The title of the sheet.</param>
         /// <param name="range">The range of the cells to get values for. E.g. "A2:B17".</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The values in the range.</returns>
-        public async Task<IList<IList<object>>> GetValuesAsync(string spreadsheetId, string sheetTitle, string range)
+        public async Task<IList<IList<object>>> GetValuesAsync(
+            string spreadsheetId,
+            string sheetTitle,
+            string range,
+            CancellationToken cancellationToken)
         {
             var a1Notation = $"'{sheetTitle}'!{range}";
             var url = $"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{a1Notation}";
-            var response = await _httpClient.GetAsync(url);
+            var response = await _httpClient.GetAsync(url, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new HttpRequestException($"Failed to fetch values: {response.ReasonPhrase}");
             }
 
-            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
             var valueRange = JsonSerializer.Deserialize<ValueRange>(jsonResponse, _jsonSerializerOptions);
 
             if (valueRange == null)
