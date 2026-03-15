@@ -1,13 +1,15 @@
 ﻿using GoogleSheets;
 
 // Get the TournamentPickerApiKey and the TournamentPickerSpreadsheetId from the environment variables
-var apiKey = Environment.GetEnvironmentVariable("TournamentPickerApiKey", EnvironmentVariableTarget.User);
-var spreadsheetId = Environment.GetEnvironmentVariable("TournamentPickerSpreadsheetId", EnvironmentVariableTarget.User);
+var apiKey = Environment.GetEnvironmentVariable("TournamentPickerApiKey")
+    ?? Environment.GetEnvironmentVariable("TournamentPickerApiKey", EnvironmentVariableTarget.User);
+var spreadsheetId = Environment.GetEnvironmentVariable("TournamentPickerSpreadsheetId")
+    ?? Environment.GetEnvironmentVariable("TournamentPickerSpreadsheetId", EnvironmentVariableTarget.User);
 
 // Check if the API key or spreadsheet ID is missing
 if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(spreadsheetId))
 {
-    Console.WriteLine("API key or spreadsheet ID is missing.");
+    Console.WriteLine("API key or spreadsheet ID is missing. API key can be found at https://console.cloud.google.com/apis/credentials?project=ncaa-tournament-picker");
     return;
 }
 
