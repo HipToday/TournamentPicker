@@ -122,15 +122,18 @@ class Program
         const int overallSeedColumn = 4; // Column E
 
         var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, region, range, cancellationToken))
-            .Select((row, i) => {
+            .Select((row, i) =>
+            {
                 var seedValue = row[seedColumn]?.ToString()?
                     .Replace("*", string.Empty);
-                if (!int.TryParse(seedValue, out int seed)) {
+                if (!int.TryParse(seedValue, out int seed))
+                {
                     seed = i + 1;
                 }
                 var name = row[nameColumn]?.ToString() ?? $"{region} {seed}";
                 var overallSeedValue = row[overallSeedColumn]?.ToString();
-                if (!int.TryParse(overallSeedValue, out int overallSeed)) {
+                if (!int.TryParse(overallSeedValue, out int overallSeed))
+                {
                     throw new InvalidOperationException($"Failed to load overall seed for {name}.");
                 }
 
@@ -147,10 +150,12 @@ class Program
     }
 }
 
-class TournamentPicker {
+class TournamentPicker
+{
     private static readonly Random random = new();
 
-    public static Team WhoWins(Team home, Team away) {
+    public static Team WhoWins(Team home, Team away)
+    {
         var seeds = new Team[home.Seed + away.Seed];
 
         Array.Fill(seeds, away, 0, home.Seed);
@@ -159,7 +164,8 @@ class TournamentPicker {
         return seeds[random.Next(seeds.Length)];
     }
 
-    public static Team WhoWinsByOverallSeed(Team home, Team away) {
+    public static Team WhoWinsByOverallSeed(Team home, Team away)
+    {
         var seeds = new Team[home.OverallSeed + away.OverallSeed];
 
         Array.Fill(seeds, away, 0, home.OverallSeed);
@@ -168,10 +174,12 @@ class TournamentPicker {
         return seeds[random.Next(seeds.Length)];
     }
 
-    public static Team[] RoundWinners(Team[] teams) {
+    public static Team[] RoundWinners(Team[] teams)
+    {
         var winners = new Team[teams.Length / 2];
 
-        for (int i = 0; i < teams.Length / 2; i++) {
+        for (int i = 0; i < teams.Length / 2; i++)
+        {
             // upsets are defined as a difference of 5 or more in seed
             var potentialUpset = Math.Abs(teams[i].Seed - teams[^(i + 1)].Seed) >= 5;
             var underdog = potentialUpset ? new[] { teams[i], teams[^(i + 1)] }.OrderBy(t => t.Seed).Last() : null;
@@ -184,20 +192,28 @@ class TournamentPicker {
         return winners;
     }
 
-    public static Team[] BracketWinner(Team[] teams, bool finalFour = false) {
-        switch (teams.Length) {
+    public static Team[] BracketWinner(Team[] teams, bool finalFour = false)
+    {
+        switch (teams.Length)
+        {
             case 4:
-                if (finalFour) {
+                if (finalFour)
+                {
                     Console.WriteLine($"\nFinal Four:");
-                } else {
+                }
+                else
+                {
                     Console.WriteLine($"\nSweet Sixteen:");
                 }
                 break;
 
             case 2:
-                if (finalFour) {
+                if (finalFour)
+                {
                     Console.WriteLine($"\nChampionship:");
-                } else {
+                }
+                else
+                {
                     Console.WriteLine($"\nElite Eight:");
                 }
                 break;
@@ -208,11 +224,12 @@ class TournamentPicker {
         }
 
         Console.WriteLine("-----------");
-        
+
         var winner = RoundWinners(teams);
 
         // If we're down to 1 we've found our winner
-        if (winner.Length == 1) {
+        if (winner.Length == 1)
+        {
             return winner;
         }
 
@@ -227,7 +244,8 @@ public class Team(string name, int seed, int overallSeed)
     public int Seed { get; } = seed;
     public int OverallSeed { get; } = overallSeed;
 
-    override public string ToString() {
+    override public string ToString()
+    {
         return $"{Seed} {Name}";
     }
 };
