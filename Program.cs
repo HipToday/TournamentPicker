@@ -137,7 +137,7 @@ class Program
                     throw new InvalidOperationException($"Failed to load overall seed for {name}.");
                 }
 
-                return new Team(name, seed, overallSeed);
+                return new Team(name, seed, overallSeed, region);
             })
             .ToArray();
 
@@ -238,15 +238,16 @@ class TournamentPicker
 
 }
 
-public class Team(string name, int seed, int overallSeed)
+public class Team(string name, int seed, int overallSeed, string region)
 {
     public string Name { get; } = name;
     public int Seed { get; } = seed;
     public int OverallSeed { get; } = overallSeed;
+    public string Region { get; } = region;
 
     override public string ToString()
     {
-        return $"{Seed} {Name}";
+        return $"{Seed} {Name} ({Region})";
     }
 };
 
