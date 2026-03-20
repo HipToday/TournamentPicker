@@ -116,10 +116,11 @@ class Program
             throw new ArgumentException("Region cannot be null or empty.", nameof(region));
         }
 
-        const string range = "A2:E17";
+        const string range = "A2:G17";
         const int seedColumn = 0; // Column A
         const int nameColumn = 1; // Column B
         const int overallSeedColumn = 4; // Column E
+        const int lastBidColumn = 6; // Column G
 
         var regionTeams = (await googleSheetsService.GetValuesAsync(spreadsheetId, region, range, cancellationToken))
             .Select((row, i) =>
@@ -130,14 +131,42 @@ class Program
                 {
                     seed = i + 1;
                 }
+
                 var name = row[nameColumn]?.ToString() ?? $"{region} {seed}";
-                var overallSeedValue = row[overallSeedColumn]?.ToString();
-                if (!int.TryParse(overallSeedValue, out int overallSeed))
+
+                int? overallSeed = null;
+                try
                 {
-                    throw new InvalidOperationException($"Failed to load overall seed for {name}.");
+                    var overallSeedValue = row[overallSeedColumn]?.ToString();
+                    if (!int.TryParse(overallSeedValue, out int overallSeedParsed))
+                    {
+                        throw new InvalidOperationException($"Failed to parse overall seed for {name}.");
+                    }
+
+                    overallSeed = overallSeedParsed;
+                }
+                catch (Exception ex) when (ex is ArgumentOutOfRangeException || ex is InvalidOperationException)
+                {
+                    Console.WriteLine($"WARNING: Failed to load overall seed for {name}. Error: {ex.Message}");
                 }
 
-                return new Team(name, seed, overallSeed, region);
+                int? lastBid = null;
+                try
+                {
+                    var lastBidValue = row[lastBidColumn]?.ToString();
+                    if (!int.TryParse(lastBidValue, out int lastBidParsed))
+                    {
+                        throw new InvalidOperationException($"Failed to parse last bid for {name}.");
+                    }
+
+                    lastBid = lastBidParsed;
+                }
+                catch (Exception ex) when (ex is ArgumentOutOfRangeException || ex is InvalidOperationException)
+                {
+                    Console.WriteLine($"WARNING: Failed to load last bid for {name}. Error: {ex.Message}");
+                }
+
+                return new Team(name, seed, overallSeed, region, lastBid);
             })
             .ToArray();
 
@@ -154,7 +183,30 @@ class TournamentPicker
 {
     private static readonly Random random = new();
 
-    public static Team WhoWins(Team home, Team away)
+    /// <summary>
+    /// Determines if the last bid for the team is recent (within the last 4 years).
+    /// This can be used to give a slight boost to teams that have been in the tournament
+    /// recently, as they may have more experience and confidence.
+    /// </summary>
+    /// <param name="team"></param>
+    /// <returns></returns>
+    public static bool IsLastBidRecent(Team team)
+    {
+        return team.LastBid >= DateTime.Now.Year - 4;
+    }
+
+    public static int GetSeedAdjustment(Team team)
+    {
+        // Start by simply adding the seed and overall seed together to get an effective seed.
+        // This will give a boost to teams with a better overall seed, which is often a good
+        // predictor of success in the tournament.
+        int effectiveSeed = team.Seed + team.OverallSeed;
+
+        // Then give a boost to teams that have been in the tournament recently
+        return effectiveSeed += IsLastBidRecent(team) ? -1 : 0;
+    }
+
+    public static Team WhoWinsBySeed(Team home, Team away)
     {
         var seeds = new Team[home.Seed + away.Seed];
 
@@ -174,6 +226,19 @@ class TournamentPicker
         return seeds[random.Next(seeds.Length)];
     }
 
+    public static Team WhoWinsWithSeedAdjustments(Team home, Team away)
+    {
+        var homeEffectiveSeed = GetSeedAdjustment(home);
+        var awayEffectiveSeed = GetSeedAdjustment(away);
+
+        var seeds = new Team[homeEffectiveSeed + awayEffectiveSeed];
+
+        Array.Fill(seeds, away, 0, homeEffectiveSeed);
+        Array.Fill(seeds, home, homeEffectiveSeed, awayEffectiveSeed);
+
+        return seeds[random.Next(seeds.Length)];
+    }
+
     public static Team[] RoundWinners(Team[] teams)
     {
         var winners = new Team[teams.Length / 2];
@@ -183,7 +248,7 @@ class TournamentPicker
             // upsets are defined as a difference of 5 or more in seed
             var potentialUpset = Math.Abs(teams[i].Seed - teams[^(i + 1)].Seed) >= 5;
             var underdog = potentialUpset ? new[] { teams[i], teams[^(i + 1)] }.OrderBy(t => t.Seed).Last() : null;
-            winners[i] = WhoWinsByOverallSeed(teams[i], teams[^(i + 1)]);
+            winners[i] = WhoWinsWithSeedAdjustments(teams[i], teams[^(i + 1)]);
             Console.WriteLine($"{teams[i]}");
             Console.WriteLine($"  vs.\tWinner: {winners[i]}{(underdog == winners[i] ? " (upset)" : "")}");
             Console.WriteLine($"{teams[^(i + 1)]}");
@@ -238,12 +303,13 @@ class TournamentPicker
 
 }
 
-public class Team(string name, int seed, int overallSeed, string region)
+public class Team(string name, int seed, int? overallSeed, string region, int? lastBid)
 {
     public string Name { get; } = name;
     public int Seed { get; } = seed;
-    public int OverallSeed { get; } = overallSeed;
+    public int OverallSeed { get; } = overallSeed ?? 0;
     public string Region { get; } = region;
+    public int LastBid { get; } = lastBid ?? 0;
 
     override public string ToString()
     {
