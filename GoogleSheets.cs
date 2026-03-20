@@ -83,7 +83,8 @@ namespace GoogleSheets
             string range,
             CancellationToken cancellationToken)
         {
-            var a1Notation = $"'{sheetTitle}'!{range}";
+            // URL encode the A1 notation to handle special characters in sheet titles
+            var a1Notation = Uri.EscapeDataString($"'{sheetTitle}'!{range}");
             var url = $"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{a1Notation}";
             var response = await _httpClient.GetAsync(url, cancellationToken);
 
